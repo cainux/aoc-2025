@@ -3,6 +3,10 @@ local tablex = require("pl.tablex")
 local scribe = require("lulu.scribe")
 
 local FILENAME <const> = "input-test.txt"
+local PAIR_COUNTS <const> = {
+    ["input.txt"] = 1000,
+    ["input-test.txt"] = 10,
+}
 local file = assert(io.open(FILENAME, "r"))
 
 local function distanceSquared(pos1, pos2)
@@ -12,7 +16,7 @@ local function distanceSquared(pos1, pos2)
     return dx * dx + dy * dy + dz * dz
 end
 
-local function closestPairs(positions)
+local function closestPairs(positions, count)
     local pairs = {}
 
     for i = 1, #positions - 1 do
@@ -31,7 +35,7 @@ local function closestPairs(positions)
 
     local result = {}
 
-    for i = 1, #pairs do
+    for i = 1, math.min(count, #pairs) do
         table.insert(result, Set({ pairs[i].idx1, pairs[i].idx2 }))
     end
 
@@ -40,14 +44,12 @@ end
 
 local function mergePairsIntoSets(pairs)
     local sets = {}
-    local lastPair
 
     for _, pairSet in ipairs(pairs) do
         local toMerge = {}
 
         for i, existingSet in ipairs(sets) do
             if not Set.isempty(Set.intersection(pairSet, existingSet)) then
-                lastPair = pairSet
                 pairSet = Set.union(pairSet, existingSet)
                 table.insert(toMerge, i)
             end
@@ -60,7 +62,7 @@ local function mergePairsIntoSets(pairs)
         table.insert(sets, pairSet)
     end
 
-    return sets, lastPair
+    return sets
 end
 
 local positions = {}
@@ -77,22 +79,21 @@ for line in file:lines() do
     })
 end
 
-local pairs = closestPairs(positions)
-local sets, lastPair = mergePairsIntoSets(pairs)
+local pairs = closestPairs(positions, PAIR_COUNTS[FILENAME])
+local sets = mergePairsIntoSets(pairs)
 
-local a, b = table.unpack(Set.values(lastPair))
-
-local aa = positions[a]
-local bb = positions[b]
-
-
-scribe.putln("%T", aa)
-scribe.putln("%T", bb)
+table.sort(sets, function(a, b) return #a > #b end)
 
 local result = {}
 
-for i = 1, #sets do
+for i = 1, 3 do
     table.insert(result, sets[i])
 end
 
 scribe.putln("%T", result)
+
+local answer = tablex.reduce(function(acc, val)
+    return acc * #val
+end, result, 1)
+
+print(answer)
