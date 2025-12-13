@@ -97,3 +97,5 @@ local answer = tablex.reduce(function(acc, val)
 end, result, 1)
 
 print(answer)
+-- 40
+-- 69192
